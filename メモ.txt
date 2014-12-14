@@ -1,0 +1,6 @@
+StandingsWindow.js (ACL)
+style.js (barColor, backgroundColor, etc)
+config.js (teamId, teamName)
+
+
+

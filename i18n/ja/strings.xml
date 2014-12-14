@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<resources>
+	<string name="news">ニュース</string>	
+	<string name="results">日程・結果</string>
+	<string name="standings">順位表</string>
+	<string name="twitter">twitter</string>
+	<string name="playerTweets">選手</string>
+	<string name="waitNewSeasonMsg">新シーズンの開幕までお待ちください</string>
+</resources>
