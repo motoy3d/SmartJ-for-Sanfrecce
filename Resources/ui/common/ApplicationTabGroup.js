@@ -5,18 +5,21 @@ function ApplicationTabGroup() {
 	var TwitterWindow = require('ui/handheld/TwitterWindow');
     var style = require("util/style").style;
     var util = require("util/util").util;
-	//create module instance
-	var self = Ti.UI.createTabGroup();
+	var config = require("/config").config;
+	var self = Ti.UI.createTabGroup({
+	    navTintColor: style.common.navTintColor
+	});
 	if(util.isAndroid()) {
 	    self.applyProperties(style.tabsAndroid);
 	}
 	
 	//create app tabs
-	var win1 = new NewsWindow(self),
+	var win1 = new NewsWindow(self, config.teamId),
 		win2 = new ResultsWindow(self),
 		win3 = new StandingsWindow(self),
 		win4 = new TwitterWindow(self, "searchTweets"),
         win5 = new TwitterWindow(self, "playerTweets")
+//        win6 = new TwitterWindow(self, "playerTweets")
 		;
 	// ニュース
 	var tab1 = Ti.UI.createTab({
@@ -52,12 +55,21 @@ function ApplicationTabGroup() {
         window: win5
     });
     win5.containingTab = tab5;
+
+    // テストタブ
+/*    var tab6 = Ti.UI.createTab({
+        title: util.isAndroid()? "" : "選手+α",
+        icon: '/images/playerTweet.png',
+        window: win6
+    });
+    win6.containingTab = tab6;*/
 	
 	self.addTab(tab1);
 	self.addTab(tab2);
 	self.addTab(tab3);
 	self.addTab(tab4);
 	self.addTab(tab5);
+	//self.addTab(tab6);
     
 	return self;
 };

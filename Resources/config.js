@@ -2,18 +2,40 @@ exports.config = {
     teamId: 'sanfrecce'
     ,hashtag: 'sanfrecce'
     ,teamName: '広島'
+    ,teamNameFull: 'サンフレッシュ広島'
     ,appName: 'スマートJ for サンフレッチェ広島'
     ,iPhoneAppUrl: 'https://itunes.apple.com/jp/app/id924948602?l=ja&ls=1&mt=8'
     ,androidAppUrl: 'https://play.google.com/store/apps/details?id=smartj.sanfrecce'
+    ,backgroundColor: 'black'
+	,visitedBgColor : '#457'
+    ,mainTextColor: 'white'
     ,color: '#600e94'
     ,tintColor: 'white'
+    ,standingsBgcolor: '#600e94'
+    ,standingsTeamFontColor: 'white'
+    ,resultsDetailBtnBgColorActive: '#333'
+    ,resultsDetailBtnColorActive: 'white'
+    ,resultsDetailBtnBgColorInactive: '#202020'
+    ,resultsDetailBtnColorInactive: '#444'
     ,dbName: 'smartj.sanfrecce'
+    //URLベース
+    ,urlBase: 'https://smartj.mobi/redsmylife/'
     //ニュースのソースURL
     ,feedUrlBase: 'http://sub0000499082.hmk-temp.com/redsmylife/news.json'
     //日程・結果のソースURL
     ,resultsUrl: "http://sub0000499082.hmk-temp.com/redsmylife/results.json?teamId=sanfrecce&season="
+    //順位表のソースURL
+    ,standingsUrl: 'http://sub0000499082.hmk-temp.com/redsmylife/standings.json'
     //設定、メッセージのソースURL
     ,messageUrl: "http://sub0000499082.hmk-temp.com/redsmylife/config.json?teamId=sanfrecce"
+    //動画のソースURL
+    ,videoUrl: "http://sub0000499082.hmk-temp.com/redsmylife/video.json?teamId=sanfrecce"
+    //報告URL
+    ,reportUrl: "https://smartj.mobi/redsmylife/report.json?teamId=sanfrecce"
+    //利用規約URL
+    ,rulesUrl: "https://smartj.mobi/redsmylife/rules.jsp?appName="
+    //開発元メールアドレス
+    ,developerMail: "motoy3d+smartj@gmail.com"
     ,newsEntriesPerPage: 50
     ,googleAnalyticsTrackingId: 'UA-30928840-1'
     //nend(iPhone)
@@ -24,4 +46,6 @@ exports.config = {
     //nend(Android)
     ,nendSpotIdAndroid: 242572
     ,nendApiKeyAndroid: '883f065e9edb447be5c3313da6064010454b4ecf'
+    ,nendSpotIdAndroidBanner: 242571
+    ,nendApiKeyAndroidBanner: '3c12ef63b7c08e61882ec0e1a680b32a794e1454'
 };

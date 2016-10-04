@@ -47,7 +47,7 @@ exports.getSiteName = function(url) {
  * ※不要な部分を削除する
  */
 exports.optimizeSiteName = function(siteName) {
-	//TODO Googleアラート, Yahoo Pipes
+	// Googleアラート, Yahoo Pipes
 	if(siteName.indexOf("Google") == 0 ||
 		siteName.indexOf("Pipes Output") == 0) {
 		return "";

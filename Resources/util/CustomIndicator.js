@@ -12,7 +12,7 @@ exports.customIndicator = {
         var indView = Titanium.UI.createView({
             height:176,
             width:176,
-            backgroundColor:'#000',
+            backgroundColor: style.common.backgroundColor,
             borderRadius:20,
             opacity:0.9,
             layout:'vertical'

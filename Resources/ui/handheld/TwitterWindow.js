@@ -5,9 +5,9 @@
  */
 function TwitterWindow(tabGroup, target) {
     var Twitter = require("/model/Twitter");
-    var WebWindow = require("/ui/handheld/WebWindow");    
     var util = require("/util/util").util;
     var style = require("/util/style").style;
+    var config = require("/config").config;
     var twitter = new Twitter(target);
     var initLoaded = false;
 
@@ -15,10 +15,13 @@ function TwitterWindow(tabGroup, target) {
     var self = Ti.UI.createWindow({
         title: "twitter"
         ,navBarHidden: false
-        ,backgroundColor: 'black'
+        ,backgroundColor: style.common.backgroundColor
         ,barColor: style.common.barColor
         ,navTintColor: style.common.navTintColor
-//        ,rightNavButton: refreshButton
+//        ,rightNavButton: optionBtn
+        ,titleAttributes: {
+            color: style.common.navTintColor
+        }
     });
     if (util.isAndroid()) {
         self.navBarHidden = true;
@@ -26,7 +29,7 @@ function TwitterWindow(tabGroup, target) {
     
     // インジケータ
     var indicator = Ti.UI.createActivityIndicator({
-        style: util.isiPhone()? Ti.UI.iPhone.ActivityIndicatorStyle.PLAIN : Ti.UI.ActivityIndicatorStyle.BIG
+        style: util.isiOS()? Ti.UI.ActivityIndicatorStyle.DARK : Ti.UI.ActivityIndicatorStyle.BIG
     });
     self.add(indicator);
     
@@ -51,7 +54,7 @@ function TwitterWindow(tabGroup, target) {
         childTemplates : style.twitter.listViewTemplate,
         properties : {
             height : Ti.UI.SIZE
-            ,backgroundColor: '#000'
+            ,backgroundColor: style.common.backgroundColor
         }
     };
     // Android用
@@ -59,7 +62,7 @@ function TwitterWindow(tabGroup, target) {
         childTemplates : style.twitter.listViewRefreshTemplate,
         properties : {
             height : Ti.UI.SIZE
-            ,backgroundColor: '#000'
+            ,backgroundColor: style.common.backgroundColor
         }
     };
 
@@ -69,9 +72,9 @@ function TwitterWindow(tabGroup, target) {
             ,'refreshTemplate': refreshTemplate
         }
         ,defaultItemTemplate : 'template'
-        ,backgroundColor: '#000'
+        ,backgroundColor: style.common.backgroundColor
     });
-    Ti.API.debug("★style.twitter.listView.backgroundColor=" + style.twitter.listView.backgroundColor);
+    Ti.API.debug("★　style.twitter.listView.backgroundColor=" + style.twitter.listView.backgroundColor);
     listView.applyProperties(style.twitter.listView);
     var sections = [];
     var dataSection = Ti.UI.createListSection();
@@ -101,20 +104,90 @@ function TwitterWindow(tabGroup, target) {
      */
     function openEntryWin(itemIndex) {
         var item = listView.sections[0].items[itemIndex];
-
+        var win = Ti.UI.createWindow(style.twitter.webWindow);
+        
         if(util.isAndroid()) {
-            var item = listView.sections[0].items[itemIndex];
             item.content.color = "#38e";
             listView.sections[0].updateItemAt(itemIndex, item);
         }
-        var win = Ti.UI.createWindow(style.twitter.webWindow);
+        var optionBtn = Ti.UI.createButton({systemButton:Ti.UI.iPhone.SystemButton.ACTION});
+        // 報告、ブロック
+		var opts = {
+			options: ['リンクをコピー', 'Safariで開く', 'ブロック', '報告', 'キャンセル'],
+			cancel: 4,
+			destructive: 0
+		};
+		optionBtn.addEventListener('click', function(e){
+			var dialog = Ti.UI.createOptionDialog(opts);
+			dialog.addEventListener('click', function(e) {
+				if (e.index == 0) {	//リンクをコピー
+					Ti.UI.Clipboard.setText(item.url);
+				} else if (e.index == 1) {	//Safariで開く
+					Ti.Platform.openURL(item.url);
+				} else if (e.index == 2) {	//ブロック
+					var dialog = Ti.UI.createAlertDialog({
+						title: ""
+						,message: "このユーザーをブロックして、今後表示しないようにしますか？"
+						,buttonNames: ["OK", "キャンセル"]
+					});
+					dialog.addEventListener('click', function(e){
+						if (e.index == 0) {
+					        var db = Ti.Database.open(config.dbName);
+					        try {
+					        	var date = util.formatDate();
+				        		var rows = db.execute("SELECT COUNT(*) FROM blockTwitterUser WHERE userScreenName = '" + item.userScreenName + "'");
+				        		if (rows.isValidRow() && rows.field(0) == 0) {
+					        		Ti.API.info('ブロック：' + item.userScreenName + ",   " + date);
+						            db.execute('INSERT INTO blockTwitterUser(userScreenName, date) VALUES(?, ?)', item.userScreenName, date);
+				        		}
+					            util.showMsg(item.userScreenName + "をブロックしました。");
+					            //Ti.App.tabGroup.removeTab();
+					            win.close();
+					            removeBlockedUser(item.userScreenName);
+					        } finally{
+					            db.close();
+					        }
+						}
+					});
+					dialog.show();
+				} else if (e.index == 3) {	//報告
+					var reportOpts = {
+						options: ['興味がない', '迷惑', 'キャンセル'],
+						cancel: 2,
+						destructive: 0
+					};
+					var reportDialog = Ti.UI.createOptionDialog(reportOpts);
+					reportDialog.addEventListener('click', function(e) {
+						if (e.index == 2) {
+							return;
+						}
+						var userId = Ti.App.Properties.getString("userId");
+					    var xhr = new XHR();
+					    var reportUrl = config.reportUrl + "&uid=" + userId + "&type=" + e.index +  "&twitterUserScreenName=" + escape(item.userScreenName);
+					    Ti.API.info('##### 報告: ' + reportUrl);
+					    xhr.get(reportUrl, onSuccessCallback, onErrorCallback);
+					    function onSuccessCallback(e) {
+					        Ti.API.info('報告完了');
+						};
+					    function onErrorCallback(e) {
+					        Ti.API.error('報告時エラー');
+						};
+						util.showMsg("ご報告ありがとうございました。");
+			            //self.close();
+					});
+					reportDialog.show();
+				}
+			});
+			dialog.show();
+		});
+
+        win.rightNavButton = optionBtn;
         //win.orientationModes = [Ti.UI.PORTRAIT];
         if (util.isAndroid()) {
             win.tabBarHidden = true;
         }
-        var entryData = listView.sections[0].items[itemIndex];
         var web = Ti.UI.createWebView({
-            url: entryData.url
+            url: item.url
         });
         if (util.isAndroid()) {
             web.softKeyboardOnFocus = Ti.UI.Android.SOFT_KEYBOARD_HIDE_ON_FOCUS;
@@ -122,7 +195,7 @@ function TwitterWindow(tabGroup, target) {
         Ti.API.info('web=' + web);
         win.add(web);
         var webIndicator = Ti.UI.createActivityIndicator({
-            style: util.isiPhone()? Ti.UI.iPhone.ActivityIndicatorStyle.DARK : Ti.UI.ActivityIndicatorStyle.BIG
+            style: util.isiOS()? Ti.UI.ActivityIndicatorStyle.DARK : Ti.UI.ActivityIndicatorStyle.BIG
         });
         win.add(webIndicator);
         webIndicator.show();
@@ -152,7 +225,7 @@ function TwitterWindow(tabGroup, target) {
         imageArrow.transform=Ti.UI.create2DMatrix();
         imageArrow.show();
         //TODO Android
-        if (util.isiPhone()) {
+        if (util.isiOS()) {
             listView.setContentInsets({top:0}, {animated:true});
         }
     }
@@ -170,7 +243,7 @@ function TwitterWindow(tabGroup, target) {
         imageArrow.hide();
         actInd.show();
         //TODO Android
-        if (util.isiPhone()) {
+        if (util.isiOS()) {
             listView.setContentInsets({top:80}, {animated:true});
         }
         setTimeout(function(){
@@ -179,7 +252,7 @@ function TwitterWindow(tabGroup, target) {
     }
     // ヘッダ(pull to refreshの行)
     var tableHeader = Ti.UI.createView({
-        backgroundColor:'#000',
+        backgroundColor: style.common.backgroundColor,
         width: Ti.UI.SIZE, height: 80
     });
     var border = Ti.UI.createView({
@@ -198,6 +271,7 @@ function TwitterWindow(tabGroup, target) {
       
     var actInd = Ti.UI.createActivityIndicator({
         /*left:20,*/ bottom:13
+        ,style: util.isiOS()? Ti.UI.ActivityIndicatorStyle.DARK : Ti.UI.ActivityIndicatorStyle.BIG
     });
     tableHeader.add(actInd);
     listView.pullView = tableHeader; 
@@ -215,7 +289,9 @@ function TwitterWindow(tabGroup, target) {
      */
     function load(kind) {
         if(util.isAndroid() && ("older" == kind || "newer" == kind)) {
-            indicator = Ti.UI.createActivityIndicator({style: Titanium.UI.ActivityIndicatorStyle.BIG});
+            indicator = Ti.UI.createActivityIndicator({
+            	style: util.isiOS()? Ti.UI.ActivityIndicatorStyle.DARK : Ti.UI.ActivityIndicatorStyle.BIG
+            	});
             self.add(indicator);
             Ti.API.info('indicator.show()');
         }
@@ -237,7 +313,6 @@ function TwitterWindow(tabGroup, target) {
                         if("firstTime" == kind) {
                             if(rowsData) {
                                 Ti.API.info("rowsData = " + util.toString(rowsData[0]));
-                                Ti.API.info("content = " + rowsData[0].postImage);
                                 if(util.isAndroid()) {   // リロードボタンの行を１番目に挿入
                                      rowsData.unshift(
                                         {
@@ -271,7 +346,7 @@ function TwitterWindow(tabGroup, target) {
                                     listView.sections = sections;
                                 }
                                 Ti.API.debug('最新データ読み込み  件数＝' + rowsData.length);
-                                var appendIdx = util.isiPhone()? 0 : 1;
+                                var appendIdx = util.isiOS()? 0 : 1;
                                 dataSection.insertItemsAt(appendIdx, rowsData);
                             }
                         }
@@ -295,6 +370,25 @@ function TwitterWindow(tabGroup, target) {
                 }
             }
         );
+    }
+
+	/*
+	 * ブロックユーザーをリストから削除するcallback
+	 */
+    function removeBlockedUser(userScreenName) {
+    	//alert("removeBlockedUser = " + userScreenName);
+    	var items = listView.sections[0].items;
+    	Ti.API.info('items.length 1 = ' + items.length);
+    	for(var i=0; i<items.length; i++) {
+    		//Ti.API.info(i + ' 🌟リンク ' + items[i].link);
+    		if (items[i].userScreenName == userScreenName) {
+        		Ti.API.info(i + ' 削除 ' + items[i].userScreenName);
+    			listView.sections[0].deleteItemsAt(i, 1);
+    			i--;
+    			items = listView.sections[0].items;
+    			//Ti.API.info('items.length 2 = ' + items.length);
+    		}
+    	}
     }
     return self;
 }

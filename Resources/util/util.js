@@ -55,6 +55,12 @@ exports.util = {
         return text;
 	},
 	/**
+	 * メッセージダイアログを表示する 
+	 */
+	showMsg : function(msg) {
+		Ti.UI.createAlertDialog({title: "", message: msg}).show();
+	},
+	/**
 	 * オフラインメッセージダイアログを表示する
 	 */
 	openOfflineMsgDialog : function() {
@@ -106,7 +112,7 @@ exports.util = {
         else if(teamName == 'ヴァンフォーレ甲府') return '甲府';
         else if(teamName == '湘南ベルマーレ') return '湘南';
         else if(teamName == '大分トリニータ') return '大分';
-        else if(teamName == '京都サンガF.C') return '京都';
+        else if(teamName == '京都サンガF.C.') return '京都';
         else if(teamName == 'ジェフユナイテッド千葉') return '千葉';
         else if(teamName == '東京ヴェルディ') return '東京V';
         else if(teamName == 'モンテディオ山形') return '山形';
@@ -215,6 +221,12 @@ exports.util = {
         return date;
     },
     /**
+     * 文字列を置換する 
+     */
+    replaceAll : function(expression, org, dest) {
+        return expression.split(org).join(dest);
+    },
+    /**
      *不要な文字列（タグや制御文字）を削除して返す 
      */
     deleteUnnecessaryText : function(text) {
@@ -248,6 +260,9 @@ exports.util = {
         if(endsWith(imgUrl, ".gif") ||
             imgUrl.indexOf("http://hbb.afl.rakuten.co.jp") == 0 ||
             imgUrl.indexOf("http://counter2.blog.livedoor.com") == 0 ||
+            imgUrl.indexOf("fbcdn") != -1 || //facebook(直接表示できない)
+            imgUrl.indexOf("http://measure.kuchikomi.ameba.jp") == 0 || //ameba
+            imgUrl.indexOf("rssad") != -1 || //rssad(直接表示できない)
             endsWith(imgUrl, "money_yen.png") ||  //浦和フットボール通信
             endsWith(imgUrl, "/btn_share_now.png") || //なう
             endsWith(imgUrl, "/btn_share_mixi.png")  //mixi
@@ -265,6 +280,19 @@ exports.util = {
                 return true;
             }
         }
+        return false;
+    },
+    /**
+     * itemが配列内の値で始まるものが含まれるかどうかを返す
+     */
+    containsStartsWith : function(array, item) {
+    	if (array) {
+	        for(var i in array) {
+	            if(item.indexOf(array[i]) == 0) {
+	                return true;
+	            }
+	        }
+		}
         return false;
     },
     /**
@@ -338,10 +366,22 @@ exports.util = {
         return (Ti.Platform.osname === 'android');
     },
     /**
+     * iOS
+     */    
+    isiOS : function(){
+        return (Ti.Platform.osname === 'iphone' || Ti.Platform.osname === 'ipad');
+    },    
+    /**
      * iPhone
      */    
     isiPhone : function(){
         return (Ti.Platform.osname === 'iphone');
+    },    
+    /**
+     * iPad
+     */    
+    isiPad : function(){
+        return (Ti.Platform.osname === 'ipad');
     },    
     /**
      * iOS6以上 

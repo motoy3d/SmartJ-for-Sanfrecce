@@ -1,61 +1,151 @@
 /**
  * WebViewを表示するウィンドウ
  * @param {Object} webData
+ * @param {Object} callback ブロック時に呼び出すNewsWindowのfunction
  */
-function WebWindow(webData) {
+function WebWindow(webData, callback) {
+    var config = require("/config").config;
 	var style = require("util/style").style;
     var util = require("util/util").util;
 	var newsSource = require("model/newsSource");
+    var XHR = require("/util/xhr");
     var social;
-    if(util.isiPhone()) {
+    if(util.isiOS()) {
         social = require('de.marcelpociot.social');
     }
 	//TODO style.js
 	var self = Ti.UI.createWindow({
 		title: webData.title
-        ,navBarHidden: false
-        ,backgroundColor: 'black'
+        ,navBarHidden: webData.navBarHidden
+        ,backgroundColor: style.common.backgroundColor
         ,barColor: style.common.barColor
         ,navTintColor: style.common.navTintColor
+        ,titleAttributes: {
+            color: style.common.navTintColor
+        }
+        ,top: 20
 	});
 	
     var webView = Ti.UI.createWebView();
     var flexSpace = Ti.UI.createButton({
         systemButton:Ti.UI.iPhone.SystemButton.FLEXIBLE_SPACE
     });
+    // 閉じるボタン
+    var closeBtn = Ti.UI.createButton({
+        systemButton:Ti.UI.iPhone.SystemButton.STOP
+    });
+    closeBtn.addEventListener("click", function(e){
+        self.close();
+    });
+    // オプションボタン
+    var optionBtn = Ti.UI.createButton({
+        systemButton:Ti.UI.iPhone.SystemButton.ACTION
+    });
+    var opts;
+    if (webData.isBlockReportEnable) {
+		var opts = {
+			options: ['リンクをコピー', 'Safariで開く', 'ブロック', '報告', 'キャンセル'],
+			cancel: 4,
+			destructive: 0
+		};
+    } else {
+		var opts = {
+			options: ['リンクをコピー', 'Safariで開く', 'キャンセル'],
+			cancel: 2,
+			destructive: 0
+		};
+    }
+	optionBtn.addEventListener('click', function(e){
+		var dialog = Ti.UI.createOptionDialog(opts);
+		dialog.addEventListener('click', function(e) {
+			if (e.index == 0) {	//リンクをコピー
+				Ti.UI.Clipboard.setText(webView.url);
+			} else if (e.index == 1) {	//Safariで開く
+				Ti.Platform.openURL(webView.url);
+			} else if (e.index == 2 && webData.isBlockReportEnable) {	//ブロック
+				var dialog = Ti.UI.createAlertDialog({
+					title: ""
+					,message: "このサイトをブロックして、今後表示しないようにしますか？"
+					,buttonNames: ["OK", "キャンセル"]
+				});
+				dialog.addEventListener('click', function(e){
+					if (e.index == 0) {
+				        var db = Ti.Database.open(config.dbName);
+				        try {
+				        	var date = util.formatDate();
+				        	var domainEndSlashIdx = webView.url.indexOf("/", 8);	//8はhttps://の8文字
+				        	Ti.API.info('domainEndSlashIdx=' + domainEndSlashIdx);
+				        	var site = "";
+				        	if (domainEndSlashIdx == -1) {	//ドメイン直下の場合
+				        		site = webData.link;
+			        		} else {
+			        			var idx2 = webData.link.indexOf("/", domainEndSlashIdx+1);
+			        			Ti.API.info('idx2=' + idx2);
+					        	site = webData.link.substring(0, idx2 + 1);
+			        		}
+			        		if (!site) {
+			        			return;
+			        		}
+			        		var rows = db.execute("SELECT COUNT(*) FROM blockSite WHERE url = '" + site + "'");
+			        		if (rows.isValidRow() && rows.field(0) == 0) {
+				        		Ti.API.info('ブロック：' + site + "    (" + webData.link + "), " + date);
+					            db.execute('INSERT INTO blockSite(url, date) VALUES(?, ?)', site, date);
+			        		}
+				            util.showMsg("ブロックしました");
+				            self.close();
+				            callback.removeBlockedSite(site);
+				        } finally{
+				            db.close();
+				        }
+					}
+				});
+				dialog.show();
+			} else if (e.index == 3 && webData.isBlockReportEnable) {	//報告
+				var reportOpts = {
+					options: ['興味がない', '迷惑', 'キャンセル'],
+					cancel: 2,
+					destructive: 0
+				};
+				var reportDialog = Ti.UI.createOptionDialog(reportOpts);
+				reportDialog.addEventListener('click', function(e) {
+					if (e.index == 2) {
+						return;
+					}
+					var userId = Ti.App.Properties.getString("userId");
+				    var xhr = new XHR();
+				    var reportUrl = config.reportUrl + "&uid=" + userId + "&type=" + e.index +  "&url=" + escape(webView.url);
+				    Ti.API.info('##### 報告: ' + reportUrl);
+				    xhr.get(reportUrl, onSuccessCallback, onErrorCallback);
+				    function onSuccessCallback(e) {
+				        Ti.API.info('報告完了');
+					};
+				    function onErrorCallback(e) {
+				        Ti.API.error('報告時エラー');
+					};
+					util.showMsg("ご報告ありがとうございました。");
+		            self.close();
+				});
+				reportDialog.show();
+			}
+		});
+		dialog.show();
+	});
     var back;
     var forward;
     var facebook;
     var twitter;
     var line;
     if(webData.toolbarVisible) { //twitter画面以外から遷移した場合
-        createToolbar();
+    	createToolbar();
     }
     addWebViewEventListener();
-    var simpleDispModeProp = Ti.App.Properties.getBool("simpleDispMode");
-    if(simpleDispModeProp == null || simpleDispModeProp == undefined) {
-        simpleDispModeProp = false;
-    }
+    
     //tweetから来た場合
     if(webData.html) {
         webView.html = webData.html;
         webView.scalesPageToFit = false;
         self.add(webView);
     }
-    //シンプル表示モード
-	else if(simpleDispModeProp &&
-	    webData.content && 
-		(webData.content != "" && 
-		 webData.content.indexOf('<img src="http://feeds.feedburner.com') == -1 
-		 )
-	) {
-		Ti.API.debug("-----------webWindow 1 link = " + webData.link);
-		var content = createWebContent(webData);
-		webView.scalesPageToFit = false;
-		webView.html = content;
-		self.add(webView);
-	}
-	//URL直接表示モード
 	else {
 		Ti.API.debug("----------- 2  link = " + webData.link);
         webView.scalesPageToFit = true;
@@ -69,16 +159,32 @@ function WebWindow(webData) {
 	function addWebViewEventListener() {
         var ind;
         webView.addEventListener('beforeload',function(e){
-            //Ti.API.info('beforeloadEvent1 e.navigationType=' + e.navigationType + ", e.url=" + e.url);
+            //Ti.API.info('beforeload ' + util.toString(e));
+            //NGサイト遮断
+            for(var i=0; i<Ti.App.ngSiteList.length; i++) {
+            	//Ti.API.info('NGサイトチェック：' + Ti.App.ngSiteList[i]);
+	            if(e.url.indexOf(Ti.App.ngSiteList[i]) != -1) {
+	            	Ti.API.info('🔵NGサイト遮断 ' + e.url);
+	            	webView.goBack();
+					var dialog = Ti.UI.createAlertDialog({
+					   message: 'このサイトは有害な内容が含まれる可能性があるため表示できません。',
+					   ok: 'OK',
+					   title: 'メッセージ'
+					});
+					dialog.show();            	
+	            	self.close();
+	            	return;
+	            }
+			}
             if(!ind && e.navigationType != 5) {//リンク先URLのhtml中の画像やiframeの場合、5
-                //Ti.API.info('beforeload #################### ');
-                //Ti.API.info(util.toString(e));
-                webView.opacity = 0.8;
+                Ti.API.info('beforeload #################### ');
+                Ti.API.info("e = " + util.toString(e));
+                //webView.opacity = 0.8;
                 //Ti.API.info(util.formatDatetime2(new Date()) + '  インジケータshow');
 //                webView.add(ind);
 //TODO style
                 ind = Ti.UI.createActivityIndicator({
-                    style:Ti.UI.iPhone.ActivityIndicatorStyle.DARK
+                    style:Ti.UI.ActivityIndicatorStyle.DARK
                 });
                 webView.add(ind);
                 ind.show();
@@ -104,7 +210,7 @@ function WebWindow(webData) {
             if(webData.toolbarVisible) {
                 var title = webView.evalJS("document.title");
                 //FBの写真、レッズプレスの場合は上書きしない
-                if(title != "" && title != "タイムラインの写真" && webData.link.indexOf("redspress") == -1) {
+                if(title != "" && title != "タイムラインの写真") {
                     self.title = title;
                 }
                 back.setEnabled(webView.canGoBack());
@@ -114,28 +220,13 @@ function WebWindow(webData) {
                 facebook.setEnabled(true);
             }
         });
-        // 下スクロール時にツールバーを隠す。上スクロール時に表示する。
-/*        if(util.isiPhone()) {
-            webView.addEventListener("swipe", function(e){
-                Ti.API.info(e.direction + '. bubbles=' + e.bubbles);
-                if(e.direction == "up") {
-                    self.setToolbar(null);
-                } else if(e.direction == "down") {
-                    createToolbar();
-                }
-                e.cancelBubble = true;
-                e.bubbles = false;
-                if(e.bubbles) {
-                    webView.fireEvent("swipe", e);
-                }
-            });
-        }*/
 	}
 	
 	/**
 	 * ツールバーを生成する。
 	 */
 	function createToolbar() {
+	    Ti.API.info('🌟ツールバー作成');
     	//ツールバー
         back = Ti.UI.createButton({
             image: "/images/arrow_left.png"
@@ -157,7 +248,6 @@ function WebWindow(webData) {
             ,enabled: false
         });
         
-               
         // twitterはiOS5で統合されたが、titanium-social-modulは
         // FB(iOS6から)が含まれているためiOS5でエラーになる。
         twitter = Ti.UI.createButton({
@@ -174,19 +264,8 @@ function WebWindow(webData) {
         twitter.addEventListener("click", tweet);
         // facebookボタン
         facebook.addEventListener("click", facebookShareBySocialModule);
-        var barItems = [line, flexSpace, twitter, flexSpace, facebook, flexSpace, flexSpace, back, flexSpace, forward];
+        var barItems = [optionBtn, line, twitter, facebook, flexSpace, back, flexSpace, forward, flexSpace, closeBtn];
         self.setToolbar(barItems, style.news.webWindowToolbar);
-    }
-    
-    /**
-     * 簡易ページに表示するコンテンツを生成する。
-     */
-    function createWebContent(webData) {
-        return "<a href=\"" + webData.link + "\">" + webData.title  + "</a>"
-            + " " + webData.pubDate + "<br/>"
-            + webData.siteName + "<br/><br/>"
-            + webData.content + "<br/><br/>" 
-            + "<a href=\"" + webData.link + "\">サイトを開く</a><br/><br/>";      
     }
     /**
      * LINEに投稿する。
@@ -194,9 +273,6 @@ function WebWindow(webData) {
     function lineSend(e) {
         Ti.App.Analytics.trackPageview('/lineDialog');   //ダイアログを開く
         var link = webView.url; 
-        if(webView.url.indexOf("http") != 0) {
-            link = webData.link; //簡易表示の場合はwebData.link
-        }
         var title = webView.evalJS("document.title");
         if(!title || link.indexOf("redspress") != -1) {
             //レッズプレスはjquery mobileを使用しており、titleタグが上書きされてしまうため
@@ -212,9 +288,6 @@ function WebWindow(webData) {
     function tweet(e) {
         Ti.App.Analytics.trackPageview('/tweetDialog');   //ダイアログを開く
         var link = webView.url; 
-        if(webView.url.indexOf("http") != 0) {
-            link = webData.link; //簡易表示の場合はwebData.link
-        }
         var title = webView.evalJS("document.title");
         if(!title || link.indexOf("redspress") != -1) {
             //レッズプレスはjquery mobileを使用しており、titleタグが上書きされてしまうため
@@ -222,14 +295,14 @@ function WebWindow(webData) {
         }
         social.showSheet({
             service:  'twitter',
-            message:  title,
+            message:  title + "#" + config.hashtag,
             urls:       [link],
             success:  function(){
                 Ti.API.info('ツイート成功');
                 Ti.App.Analytics.trackPageview('/tweet');
             },
             error: function(){
-                alert("iPhoneの設定でTwitterアカウントを登録してください。");
+                util.showMsg("iPhoneの設定でTwitterアカウントを登録してください。");
             }
         });
     }
@@ -239,9 +312,6 @@ function WebWindow(webData) {
     function facebookShareBySocialModule() {
         Ti.App.Analytics.trackPageview('/fbShareDialog');   //ダイアログを開く
         var link = webView.url; 
-        if(webView.url.indexOf("http") != 0) {
-            link = webData.link; //簡易表示の場合はwebData.link
-        }
         Ti.API.info('facebook share >>>>>>>> ' + link);
 
         social.showSheet({
@@ -253,7 +323,7 @@ function WebWindow(webData) {
                 Ti.App.Analytics.trackPageview('/fbShare');
             },
             error: function(){
-                alert("iPhoneの設定でFacebookアカウントを登録してください。");
+                util.showMsg("iPhoneの設定でFacebookアカウントを登録してください。");
             }
         });
     }
@@ -262,9 +332,6 @@ function WebWindow(webData) {
      */	
 	function facebookShareByWebView() {
         var link = webView.url; 
-        if(webView.url.indexOf("http") != 0) {
-            link = webData.link; //簡易表示の場合はwebData.link
-        }
         Ti.API.info('facebookシェア link=' + link);
         var data = {
             link : link

@@ -44,25 +44,11 @@ function WebWindow(webData) {
         webView.bottom = 0;
     }
 
-    var simpleDispModeProp = Ti.App.Properties.getBool("simpleDispMode");
-	Ti.API.info("#####  webData.link=[" + webData.link + "]");
-	
     if(webData.html) {  //tweet
         Ti.API.info("----------- 7");
         webView.html = webData.html;
         webView.scalesPageToFit = false;
         self.add(webView);
-    }
-	else if(simpleDispModeProp &&
-	    webData.content && 
-		(webData.content != "" && 
-		 webData.content.indexOf('<img src="http://feeds.feedburner.com') == -1 
-		 )
-	) {
-        Ti.API.info("----------- 8");
-        webView.scalesPageToFit = false;
-		webView.html = createWebContent(webData);
-		self.add(webView);
 	} else {
         //var indWin = customIndicator.create();
         var loaded = false;
@@ -117,7 +103,7 @@ function WebWindow(webData) {
             Ti.API.info(util.toString(e));
             if(referrer && e.url && e.url.indexOf("file://") == 0) {
                 //referrerがnullでない場合があり、エラーになる。
-                Ti.API.info('★★★★★★★★e.url=' + e.url);
+                Ti.API.info('★★★★★★★★　e.url=' + e.url);
                 //TODO
                 // webView.url = "";
                 // webView.html = createWebContent(webData);
@@ -136,7 +122,7 @@ function WebWindow(webData) {
                     shortTitle = title.substring(0, 21) + "...";
                 }
             }
-            Ti.API.info('load★ title=' + title + "  e.url=" + e.url);
+            Ti.API.info('load★　 title=' + title + "  e.url=" + e.url);
             titleBar.text = shortTitle;
             if(e.url && e.url.indexOf("file://") == 0) {
                 back.setEnabled(false);

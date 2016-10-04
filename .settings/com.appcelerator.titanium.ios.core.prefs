@@ -1,11 +1,12 @@
 eclipse.preferences.version=1
 iosLaunchConfigurationAttributes/ATTR_MINIFY=true
 iosLaunchConfigurationAttributes/ATTR_PROJECT_NAME=SmartJ for Sanfrecce
+iosLaunchConfigurationAttributes/ATTR_UPLOAD_DEBUG_SYMBOLS=false
 iosLaunchConfigurationAttributes/appid=smartj.sanfrecce
 iosLaunchConfigurationAttributes/certificate=Motoi Kataoka (23Q2N723L7)
 iosLaunchConfigurationAttributes/keychain=
-iosLaunchConfigurationAttributes/sdk_version=7.1
-iosLaunchConfigurationAttributes/uuid=7eb3c16c-758a-47e5-9101-cbb92518724a
+iosLaunchConfigurationAttributes/sdk_version=10.0
+iosLaunchConfigurationAttributes/uuid=a4c29904-5f0f-4691-a276-5fc4ffb04431
 provisioning_profiles/development/268901D7-C80B-4F6A-B409-7FDCEDD3ACB4/appid=*
 provisioning_profiles/development/268901D7-C80B-4F6A-B409-7FDCEDD3ACB4/name=Motoi Wildcard
 provisioning_profiles/development/268901D7-C80B-4F6A-B409-7FDCEDD3ACB4/uuid=268901D7-C80B-4F6A-B409-7FDCEDD3ACB4
