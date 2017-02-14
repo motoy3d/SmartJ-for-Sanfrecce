@@ -42,7 +42,14 @@ function ConfigWindow(webData) {
             Ti.App.Analytics.trackPageview('/lineDialogForAppShare');
             var msg = encodeURIComponent(config.appName + "  ") + util.getAppUrl();
             Ti.API.info("LINEへのパラメータ=" + msg);
-            Ti.Platform.openURL("line://msg/text/" + msg);
+            var opened = Ti.Platform.openURL("line://msg/text/" + msg);
+            if (!opened) {
+	            var dialog = Ti.UI.createAlertDialog({
+	                message: "LINEをインストールしてください。",
+	                buttonNames: ['OK']
+	            });
+	            dialog.show();
+            }
         }
         else if(e.index == 1) { //友達にメールですすめる
             Ti.App.Analytics.trackPageview('/mailDialogForAppShare');
@@ -68,9 +75,16 @@ function ConfigWindow(webData) {
                     }
                 });
             } else {
-                var twitterClass = util.getTwitterClass();  //モジュールでTwitter公式アプリからクラス名を取得
-                util.sendToApp("com.twitter.android", twitterClass
-                    ,config.appName + "  " + util.getAppUrl() + " #" + config.hashtag);
+	            var msg = encodeURIComponent(config.appName + "  ") + util.getAppUrl() + "%20#" + config.hashtag;
+	            Ti.API.info("twitterへのパラメータ=" + msg);
+	            var opened = Ti.Platform.openURL("twitter://post?message=" + msg);
+	            if (!opened) {
+		            var dialog = Ti.UI.createAlertDialog({
+		                message: "twitterをインストールしてください。",
+		                buttonNames: ['OK']
+		            });
+		            dialog.show();
+	            }
             }
         }
         else if(e.index == 3) { //FBでシェア

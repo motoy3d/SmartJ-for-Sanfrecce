@@ -21,15 +21,15 @@ exports.config = {
     //URLベース
     ,urlBase: 'https://smartj.mobi/redsmylife/'
     //ニュースのソースURL
-    ,feedUrlBase: 'http://sub0000499082.hmk-temp.com/redsmylife/news.json'
+    ,feedUrlBase: 'https://smartj.mobi/redsmylife/news.json'
     //日程・結果のソースURL
-    ,resultsUrl: "http://sub0000499082.hmk-temp.com/redsmylife/results.json?teamId=sanfrecce&season="
+    ,resultsUrl: "https://smartj.mobi/redsmylife/results.json?teamId=sanfrecce&season="
     //順位表のソースURL
-    ,standingsUrl: 'http://sub0000499082.hmk-temp.com/redsmylife/standings.json'
+    ,standingsUrl: 'https://smartj.mobi/redsmylife/standings.json'
     //設定、メッセージのソースURL
-    ,messageUrl: "http://sub0000499082.hmk-temp.com/redsmylife/config.json?teamId=sanfrecce"
+    ,messageUrl: "https://smartj.mobi/redsmylife/config.json?teamId=sanfrecce"
     //動画のソースURL
-    ,videoUrl: "http://sub0000499082.hmk-temp.com/redsmylife/video.json?teamId=sanfrecce"
+    ,videoUrl: "https://smartj.mobi/redsmylife/video.json?teamId=sanfrecce"
     //報告URL
     ,reportUrl: "https://smartj.mobi/redsmylife/report.json?teamId=sanfrecce"
     //利用規約URL

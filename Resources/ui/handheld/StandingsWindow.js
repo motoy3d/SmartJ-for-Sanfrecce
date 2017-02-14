@@ -8,15 +8,8 @@ function StandingsWindow(tabGroup) {
 	var style = require("/util/style").style;
     var initLoaded = false;
 	var isLoading = false;
-    var currentCompeIdx = 0;    //J1の場合、0:1st、1:2nd、2:年間、3:ACL or ルヴァン
-    var is2stages = true;   //2ステージ制フラグ
-    var aclNabiscoCompeIdx = is2stages? 3 : 1;
-    var currentStage = Ti.App.currentStage;  //ステージ(1st/2nd/total)
-    if (currentStage == "2nd") {
-        currentCompeIdx = 1;
-    } else if(currentStage == "total") {
-        currentCompeIdx = 2;
-    }
+    var currentCompeIdx = 0;    //J1の場合、0:J、1:ACL or ルヴァン
+    var aclNabiscoCompeIdx = 1;
     // ソートボタン
     var sortButton = Ti.UI.createButton({
         title: "ソート"
@@ -46,82 +39,52 @@ function StandingsWindow(tabGroup) {
         self.addEventListener('focus', function(){
             if(!initLoaded) {
                 Ti.API.info('-----------------------StandingsWindow focus event');
-        		loadJStandings("", "seq");
+        		loadJStandings("seq");
                 initLoaded = true;
         	}
     	});
     } else {
         self.addEventListener('open', function(){
             Ti.API.info('-----------------------StandingsWindow open event');
-            loadJStandings("", "seq");
+            loadJStandings("seq");
         });
     }
-    if ("J1" == Ti.App.jcategory) {
-        if (util.isiOS()) {
-            var flexSpace = Ti.UI.createButton({
-               systemButton:Ti.UI.iPhone.SystemButton.FLEXIBLE_SPACE
-            });
-            //ツールバー
-            var compeButtonBar = Ti.UI.iOS.createTabbedBar(style.standings.compeButtonBar);
-            var secondCompe = Ti.App.aclFlg ? "ACL" : "ルヴァン";
-            if (is2stages) {
-                compeButtonBar.labels = [
-                    {title: Ti.App.jcategory + " 1st", enabled: true}
-                    ,{title: Ti.App.jcategory + " 2nd", enabled: true}
-                    ,{title: Ti.App.jcategory + "年間", enabled: true}
-                    ,{title: secondCompe, enabled: true}
-                ];
-                compeButtonBar.width = 285;
-            } else {
-                compeButtonBar.labels = [{title: Ti.App.jcategory, enabled: true}, {title: secondCompe, enabled: true}];
+    if ("J1" == Ti.App.jcategory && util.isiOS()) {
+        var flexSpace = Ti.UI.createButton({
+           systemButton:Ti.UI.iPhone.SystemButton.FLEXIBLE_SPACE
+        });
+        //ツールバー
+        var compeButtonBar = Ti.UI.iOS.createTabbedBar(style.standings.compeButtonBar);
+        var secondCompe = Ti.App.aclFlg ? "ACL" : "ルヴァン";
+        compeButtonBar.labels = [{title: Ti.App.jcategory, enabled: true}, {title: secondCompe, enabled: true}];
+        compeButtonBar.setIndex(currentCompeIdx);
+        compeButtonBar.addEventListener("click", function(e){
+            if(isLoading) {
+                return;
             }
-            compeButtonBar.setIndex(currentCompeIdx);
-            compeButtonBar.addEventListener("click", function(e){
-                if(isLoading) {
-                    return;
+            if(currentCompeIdx != e.index) {
+                currentCompeIdx = e.index;
+                if(e.index == 0) {
+                    loadJStandings("seq");
                 }
-                if(currentCompeIdx != e.index) {
-                    currentCompeIdx = e.index;
-                    if ("J1" == Ti.App.jcategory && is2stages) {
-                        if(0 <= e.index && e.index <= 2) {
-                            if (e.index == 0) currentStage = "1st";
-                            else if (e.index == 1) currentStage = "2nd";
-                            else if (e.index == 2) currentStage = "total";
-                            loadJStandings(currentStage, "seq");
-                        }
-                        else if(e.index == 3) {
-                            if (Ti.App.aclFlg) {
-                                loadACLStandings();
-                            } else {
-                                loadNabiscoStandings();
-                            }
-                        }
+                else if(e.index == 1) {
+                    if (Ti.App.aclFlg) {
+                        loadACLStandings();
                     } else {
-                        if(e.index == 0) {
-                            loadJStandings("", "seq");
-                        }
-                        else if(e.index == 1) {
-                            if (Ti.App.aclFlg) {
-                                loadACLStandings();
-                            } else {
-                                loadNabiscoStandings();
-                            }
-                        }
+                        loadNabiscoStandings();
                     }
                 }
-            });
-            self.setToolbar([flexSpace, compeButtonBar, flexSpace]);
-        } else {
-            //Android
-            var toolbar = createToolbarForAndroid();
-            self.add(toolbar);
-        }
+            }
+        });
+        self.setToolbar([flexSpace, compeButtonBar, flexSpace]);
+    }
+    if (util.isAndroid()) {
+        //Android
+        var toolbar = createToolbarForAndroid();
+        self.add(toolbar);
     }
     //親ビュー
     var containerView = Ti.UI.createView(util.isiOS()? style.standings.standingsViewiPhone : style.standings.standingsViewAndroid);
-    if ("J2" == Ti.App.jcategory) {
-        containerView.bottom = 0;
-    }
     self.add(containerView);
     // ヘッダー
     var jHeaderView;
@@ -141,25 +104,13 @@ function StandingsWindow(tabGroup) {
             return;
         }
         self.remove(table);
-        if ("J1" == Ti.App.jcategory && is2stages) {
-            if(0 <= currentCompeIdx && currentCompeIdx <= 2) {
-                loadJStandings(currentStage, "seq");
-            } else if(currentCompeIdx == 3){
-                if (Ti.App.aclFlg) {
-                    loadACLStandings();
-                } else {
-                    loadNabiscoStandings();
-                }
-            }
-        } else {
-            if(currentCompeIdx == 0) {
-                loadJStandings("", "seq");
-            } else if(currentCompeIdx == 1){
-                if (Ti.App.aclFlg) {
-                    loadACLStandings();
-                } else {
-                    loadNabiscoStandings();
-                }
+        if(currentCompeIdx == 0) {
+            loadJStandings("seq");
+        } else if(currentCompeIdx == 1){
+            if (Ti.App.aclFlg) {
+                loadACLStandings();
+            } else {
+                loadNabiscoStandings();
             }
         }
     });
@@ -177,19 +128,19 @@ function StandingsWindow(tabGroup) {
                 return;
             }
             if(0 == e.index) {
-                loadJStandings(currentStage, "gotGoal");
+                loadJStandings("gotGoal");
             } else if(1 == e.index) {
-                loadJStandings(currentStage, "lostGoal");
+                loadJStandings("lostGoal");
             } else if(2 == e.index) {
-                loadJStandings(currentStage, "diff");
+                loadJStandings("diff");
             } else if(3 == e.index) {
-                loadJStandings(currentStage, "win");
+                loadJStandings("win");
             } else if(4 == e.index) {
-                loadJStandings(currentStage, "lost");
+                loadJStandings("lost");
             } else if(5 == e.index) {
-                loadJStandings(currentStage, "draw");
+                loadJStandings("draw");
             } else if(6 == e.index) {
-                loadJStandings(currentStage, "seq");
+                loadJStandings("seq");
             }
         });
         sortDialog.show();
@@ -201,9 +152,9 @@ function StandingsWindow(tabGroup) {
     function createHeaderView(aclFlg) {
         var headerView1 = Ti.UI.createView(style.standings.headerView);    
         var rankHeader = createHeaderLabel('位', 5);
-        var teamHeader = createHeaderLabel('チーム', 30);
-        var leftPos = 100;
-        var w = 33;
+        var teamHeader = createHeaderLabel('チーム', 33);
+        var leftPos = util.isiOS()? 100 : 110;
+        var w = util.isiOS()? 33 : 36;
         if(aclFlg) {
             leftPos += 30;
             w = 28;
@@ -230,7 +181,7 @@ function StandingsWindow(tabGroup) {
 	/**
 	 * Jリーグ順位表を読み込んで表示する
 	 */
-	function loadJStandings(stage, sort) {
+	function loadJStandings(sort) {
         if(isLoading) {
             return;
         }
@@ -248,7 +199,7 @@ function StandingsWindow(tabGroup) {
         var border = Ti.UI.createLabel(style.standings.border);
         containerView.add(border);
         
-		var standings = new Standings("J", currentStage);
+		var standings = new Standings("J");
 		standings.load(sort, {
 			success: function(standingsDataList) {
 				try {
@@ -259,6 +210,22 @@ function StandingsWindow(tabGroup) {
 				            data.rank, data.team, data.point, data.win, data.draw, data.lose
 				            , data.gotGoal, data.lostGoal, data.diff, false)
 				        );
+				        // 昇格降格ライン
+				        if (Ti.App.jcategory == "J1") {
+					        if (data.rank == 15) {
+						        var lineRow = Ti.UI.createTableViewRow(style.standings.tableViewKokakuLineRow);
+						        rows.push(lineRow);;
+					        }
+				        } else if (Ti.App.jcategory == "J2") {
+					        if (data.rank == 2 || data.rank == 6) {
+						        var lineRow = Ti.UI.createTableViewRow(style.standings.tableViewShokakuLineRow);
+						        rows.push(lineRow);;
+					        }
+					        if (data.rank == 20 || data.rank == 21) {
+						        var lineRow = Ti.UI.createTableViewRow(style.standings.tableViewKokakuLineRow);
+						        rows.push(lineRow);;
+					        }
+				        }
 				    }
                     table = Ti.UI.createTableView(style.standings.table);
 				    table.setData(rows);
@@ -430,7 +397,8 @@ function StandingsWindow(tabGroup) {
             row.backgroundColor = style.standings.backgroundColor;
         }
         // 順位
-        var rankLabel = createRowLabel(rank, 2, 23, 'center', labelColor);
+        var rankLabelWidth = util.isiOS() ? 23 : 29;
+        var rankLabel = createRowLabel(rank, 2, rankLabelWidth, 'center', labelColor);
         row.add(rankLabel);
         // チーム
         var teamWidth = 74;
@@ -441,37 +409,40 @@ function StandingsWindow(tabGroup) {
                 team = team.substring(0, idx);
             }
         }
-        var teamLabel = createRowLabel(team, 27, teamWidth, 'left', labelColor);
+        var teamLeft = 33;
+        var teamLabel = createRowLabel(team, teamLeft, teamWidth, 'left', labelColor);
 
         row.add(teamLabel);
-        var leftPos = 93;
-        var w = 32;
-        var w2 = 30;
+        var leftPos = util.isiOS() ? 93 : 102;
+        //var w = 32;
+        var w = util.isiOS()? 32 : 35;
+        var labelWidth = util.isiOS() ? 30 : 34;
         if(aclFlg) {
-            leftPos += 25;
+            leftPos += 28;
             w = 28;
-            w2 = 28;
+            labelWidth = util.isiOS() ? 28 : 34;
         }
+        
         // 勝点
-        var pointLabel = createRowLabel(point, leftPos, w2, "right", labelColor);
+        var pointLabel = createRowLabel(point, leftPos, labelWidth, "right", labelColor);
         row.add(pointLabel);
         // 勝
-        var winLabel = createRowLabel(win, leftPos+(w*1), w2, "right", labelColor);
+        var winLabel = createRowLabel(win, leftPos+(w*1), labelWidth, "right", labelColor);
         row.add(winLabel);
         // 分
-        var drawLabel = createRowLabel(draw, leftPos+(w*2), w2, "right", labelColor);
+        var drawLabel = createRowLabel(draw, leftPos+(w*2), labelWidth, "right", labelColor);
         row.add(drawLabel);
         // 負
-        var loseLabel = createRowLabel(lose, leftPos+(w*3), w2, "right", labelColor);
+        var loseLabel = createRowLabel(lose, leftPos+(w*3), labelWidth, "right", labelColor);
         row.add(loseLabel);
         // 得
-        var gotGoalLabel = createRowLabel(gotGoal, leftPos+(w*4), w2, "right", labelColor);
+        var gotGoalLabel = createRowLabel(gotGoal, leftPos+(w*4), labelWidth, "right", labelColor);
         row.add(gotGoalLabel);
         // 失
-        var lostGoalLabel = createRowLabel(lostGoal, leftPos+(w*5), w2, "right", labelColor);
+        var lostGoalLabel = createRowLabel(lostGoal, leftPos+(w*5), labelWidth, "right", labelColor);
         row.add(lostGoalLabel);
         // 差
-        var diffGoalLabel = createRowLabel(diffGoal, leftPos+(w*6), w2, "right", labelColor);
+        var diffGoalLabel = createRowLabel(diffGoal, leftPos+(w*6), labelWidth, "right", labelColor);
         row.add(diffGoalLabel);
         return row;
     }
@@ -507,9 +478,10 @@ function StandingsWindow(tabGroup) {
      */
     function createToolbarForAndroid() {
         var platformWidth = Ti.Platform.displayCaps.platformWidth;
-        var sortLeft  = 5;
+//        var btnWidth = 130;
+//        var sortLeft  = (platformWidth - (btnWidth * 3) + 20) / 2;	//20はスペース10*2つ分
         var sortBtn = Ti.UI.createButton(style.standings.sortButtonAndroid);
-        sortBtn.left = sortLeft;
+//        sortBtn.left = sortLeft;
         // ソートボタン
         sortBtn.addEventListener('click', function(e){
             if(isLoading) {
@@ -523,103 +495,46 @@ function StandingsWindow(tabGroup) {
                     return;
                 }
                 if(0 == e.index) {
-                    loadJStandings(currentStage, "gotGoal");
+                    loadJStandings("gotGoal");
                 } else if(1 == e.index) {
-                    loadJStandings(currentStage, "lostGoal");
+                    loadJStandings("lostGoal");
                 } else if(2 == e.index) {
-                    loadJStandings(currentStage, "diff");
+                    loadJStandings("diff");
                 } else if(3 == e.index) {
-                    loadJStandings(currentStage, "win");
+                    loadJStandings("win");
                 } else if(4 == e.index) {
-                    loadJStandings(currentStage, "lost");
+                    loadJStandings("lost");
                 } else if(5 == e.index) {
-                    loadJStandings(currentStage, "draw");
+                    loadJStandings("draw");
                 } else if(6 == e.index) {
-                    loadJStandings(currentStage, "seq");
+                    loadJStandings("seq");
                 }
             });
             sortDialog.show();
         });
-        var jBtnLeft  = sortLeft + 70;
+//        var jBtnLeft  = sortLeft + btnWidth + 10;
         //Jリーグ
-        var jBtn1st = Ti.UI.createButton(style.standings.jButtonAndroid);
-        jBtn1st.title = Ti.App.jcategory;
-        jBtn1st.left = jBtnLeft;
-        var jBtn2nd;
-        var jBtnTotal;
-        var btnWidth = 70;
-        if (is2stages) {
-            jBtnLeft  = sortLeft + 70;
-            //1st
-            jBtn1st.title = Ti.App.jcategory + " 1st";
-            jBtn1st.left = jBtnLeft;
-            //2nd
-            jBtn2nd = Ti.UI.createButton(style.standings.jButtonAndroid);
-            jBtn2nd.title = Ti.App.jcategory + " 2nd";
-            jBtn2nd.left = jBtnLeft + 70;
-            //年間
-            jBtnTotal = Ti.UI.createButton(style.standings.jButtonAndroid);
-            jBtnTotal.title = Ti.App.jcategory + "年間";
-            jBtnTotal.left = jBtnLeft + 140;
-            //ボタン有効化
-            if (currentStage == "1st") {
-                jBtn1st.opacity = 0.5;
-                jBtn1st.enabled = false;
-            } else if (currentStage == "2nd") {
-                jBtn2nd.opacity = 0.5;
-                jBtn2nd.enabled = false;
-            } else {
-                jBtnTotal.opacity = 0.5;
-                jBtnTotal.enabled = false;
-            }
-        }
+        var jBtn = Ti.UI.createButton(style.standings.jButtonAndroid);
+        jBtn.title = Ti.App.jcategory;
+//        jBtn.left = jBtnLeft;
         //ACL / Nabisco
         var aclNabisco = Ti.UI.createButton(style.standings.aclNabiscoButtonAndroid);
-        aclNabisco.title = Ti.App.aclFlg ? "ACL" : "ﾅﾋﾞｽｺ";
-        aclNabisco.left = jBtnLeft + 210;
+        aclNabisco.title = Ti.App.aclFlg ? "ACL" : "ルヴァン";
+//        aclNabisco.left = jBtnLeft + btnWidth + 10;
         
-        jBtn1st.addEventListener("click", function(e){
+        jBtn.addEventListener("click", function(e){
             if(currentCompeIdx != 0) {
                 currentCompeIdx = 0;
-                currentStage = "1st";
-                jBtn1st.enabled = false;    jBtn1st.color = "white";    jBtn1st.opacity = 0.5;
-                jBtn2nd.enabled = true;    jBtn2nd.color = "black";    jBtn2nd.opacity = 1;
-                jBtnTotal.enabled = true;    jBtnTotal.color = "black";    jBtnTotal.opacity = 1;
+                jBtn.enabled = false;    jBtn.color = "white";    jBtn.opacity = 0.5;
                 aclNabisco.enabled = true;  aclNabisco.color = "black"; aclNabisco.opacity = 1;
                 sortBtn.enabled = true; sortBtn.color = "black";    sortBtn.opacity = 1;
-                loadJStandings(currentStage, "seq");
-            }
-        });
-        jBtn2nd.addEventListener("click", function(e){
-            if(currentCompeIdx != 1) {
-                currentCompeIdx = 1;
-                currentStage = "2nd";
-                jBtn1st.enabled = true;    jBtn1st.color = "black";    jBtn1st.opacity = 1;
-                jBtn2nd.enabled = false;    jBtn2nd.color = "white";    jBtn2nd.opacity = 0.5;
-                jBtnTotal.enabled = true;    jBtnTotal.color = "black";    jBtnTotal.opacity = 1;
-                aclNabisco.enabled = true;  aclNabisco.color = "black"; aclNabisco.opacity = 1;
-                sortBtn.enabled = true; sortBtn.color = "black";    sortBtn.opacity = 1;
-                loadJStandings(currentStage, "seq");
-            }
-        });
-        jBtnTotal.addEventListener("click", function(e){
-            if(currentCompeIdx != 2) {
-                currentCompeIdx = 2;
-                currentStage = "Total";
-                jBtn1st.enabled = true;    jBtn1st.color = "black";    jBtn1st.opacity = 1;
-                jBtn2nd.enabled = true;    jBtn2nd.color = "black";    jBtn2nd.opacity = 1;
-                jBtnTotal.enabled = false;    jBtnTotal.color = "white";    jBtnTotal.opacity = 0.5;
-                aclNabisco.enabled = true;  aclNabisco.color = "black"; aclNabisco.opacity = 1;
-                sortBtn.enabled = true; sortBtn.color = "black";    sortBtn.opacity = 1;
-                loadJStandings(currentStage, "seq");
+                loadJStandings("seq");
             }
         });
         aclNabisco.addEventListener("click", function(e){
             if(currentCompeIdx != aclNabiscoCompeIdx) {
                 currentCompeIdx = aclNabiscoCompeIdx;
-                jBtn1st.enabled = true;     jBtn1st.color = "black";    jBtn1st.opacity = 1;
-                jBtn2nd.enabled = true;    jBtn2nd.color = "black";    jBtn2nd.opacity = 1;
-                jBtnTotal.enabled = true;    jBtnTotal.color = "black";    jBtnTotal.opacity = 1;
+                jBtn.enabled = true;     jBtn.color = "black";    jBtn.opacity = 1;
                 aclNabisco.enabled = false; aclNabisco.color = "white"; aclNabisco.opacity = 0.5;
                 sortBtn.enabled = false;    sortBtn.color = "white";    sortBtn.opacity = 0.5;
                 if (Ti.App.aclFlg) {
@@ -635,15 +550,18 @@ function StandingsWindow(tabGroup) {
             ,height: 46
             ,bottom: 0
         });
-        toolbar.add(sortBtn);
-        if (is2stages) {
-            toolbar.add(jBtn1st);
-            toolbar.add(jBtn2nd);
-            toolbar.add(jBtnTotal);
-        } else {
-            toolbar.add(jBtn1st);
+        var btnHolder = Ti.UI.createView({
+            backgroundColor: style.common.navTintColor
+            ,width: "J1" == Ti.App.jcategory ? 320 : 100
+            ,height: 46
+            ,bottom: 0
+        });
+        btnHolder.add(sortBtn);
+        if ("J1" == Ti.App.jcategory) {
+	        btnHolder.add(jBtn);
+	        btnHolder.add(aclNabisco);
         }
-        toolbar.add(aclNabisco);
+        toolbar.add(btnHolder);
         return toolbar;
     }
 

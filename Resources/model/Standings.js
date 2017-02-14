@@ -1,7 +1,7 @@
 /**
  * 順位表取得サービス
  */
-function Standings(compe, stage) {
+function Standings(compe) {
     var config = require("/config").config;
 	var util = require("util/util").util;
     var style = require("util/style").style;
@@ -15,9 +15,6 @@ function Standings(compe, stage) {
         compe = "J";
     }
     standingsUrl += "&compe=" + compe;
-    if (stage) {
-        standingsUrl += "&stage=" + stage;
-    }
     
 	/**
 	 * 自前サーバからJSONを読み込んで表示する
@@ -38,7 +35,6 @@ function Standings(compe, stage) {
         } else {
             Ti.App.Analytics.trackPageview('/standings?compe=' + compe);
         }
-
         var xhr = new XHR();
         // Normal plain old request with a 5mins caching
         if(sort){

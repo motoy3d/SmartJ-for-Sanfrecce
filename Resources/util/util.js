@@ -3,8 +3,8 @@ var style = require("util/style").style;
 var checkapp = null;
 var androidDisplay = null;
 if(Ti.Platform.osname == "android"){
-    checkapp = require('com.motoy3d.check.app.android');
-    androidDisplay = require("com.motoy3d.android.displayinfo");
+    //checkapp = require('com.motoy3d.check.app.android');
+    //androidDisplay = require("com.motoy3d.android.displayinfo");
 }
 exports.util = {
 	/**

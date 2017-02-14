@@ -12,12 +12,13 @@
 	    launchAppCount = 0;	//起動回数
 	    Ti.App.Properties.setBool("shareAndReviewDoneFlg", false);	
 	}
-	var eulaDone = Ti.App.Properties.getBool("eulaDone");
-    // 利用規約表示
-	if (!eulaDone) {
-		openEULA();
+	if (util.isiOS()) {
+		var eulaDone = Ti.App.Properties.getBool("eulaDone");
+	    // 利用規約表示
+		if (!eulaDone) {
+			openEULA();
+		}
 	}
-
 	Ti.App.Properties.setInt("LaunchAppCount", ++launchAppCount);
 	Ti.API.info('アプリ起動 : ' + launchAppCount);
 	// ユーザーID保存

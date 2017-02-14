@@ -135,15 +135,19 @@ function ResultsWindow(tabGroup, otherTeamId, otherTeamName) {
 	 */
 	function loadDetailHtml(detailUrl) {
 		Ti.API.info("loadDetailHtml----------");
-		var webData = {
-			title : "試合詳細"
-			,link : detailUrl
-			,navBarHidden: true
-			,toolbarVisible: true
-			,isBlockReportEnable : false
-		};
-		var webWindow = new WebWindow(webData);
-        tabGroup.activeTab.open(webWindow, {animated: true});
+        if (util.isAndroid()) {
+        	Ti.Platform.openURL(detailUrl);
+        } else {
+			var webData = {
+				title : "試合詳細"
+				,link : detailUrl
+				,navBarHidden: true
+				,toolbarVisible: true
+				,isBlockReportEnable : false
+			};
+			var webWindow = new WebWindow(webData);
+	        tabGroup.activeTab.open(webWindow, {animated: true});
+		}
 	}
 
 	/**
@@ -236,6 +240,7 @@ function ResultsWindow(tabGroup, otherTeamId, otherTeamName) {
             ,bottom: 0
         });
         if (util.isAndroid()) {
+        	closeBtn.backgroundColor = "#ccc";
             closeBtn.color = "black";
         }
         closeBtn.addEventListener("click", function(e){

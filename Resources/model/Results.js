@@ -167,6 +167,7 @@ function Results(resultsWindow, otherTeamId, otherTeamName) {
 		}
 		// 試合詳細ウィンドウを開くイベント
 		detailButton.addEventListener('click', function() {
+			Ti.App.Analytics.trackPageview('/gameDetail');
 			resultsWindow.loadDetailHtml(detailUrl);
 		});
 		row.add(detailButton);
@@ -192,6 +193,7 @@ function Results(resultsWindow, otherTeamId, otherTeamName) {
 		if (item.ticket_url) {
 			var ticketButton = Ti.UI.createButton(style.results.ticketButton);
 			ticketButton.addEventListener('click', function() {
+				Ti.App.Analytics.trackPageview('/ticket');
 				resultsWindow.loadDetailHtml(item.ticket_url);
 			});
 			row.add(ticketButton);

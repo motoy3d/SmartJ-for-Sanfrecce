@@ -246,14 +246,17 @@ var Analytics = AnalyticsBase.extend({
                 };
                 
                 var path = this._constructRequestPath(event);
-                
-                this._httpClient.open('GET', 'https://www.google-analytics.com' + path, this._isAsync);
-                this._httpClient.setRequestHeader('User-Agent', this._USER_AGENT);
-                this._httpClient.send();
-                
-                eventsToDelete.push(event.event_id);
-                
-                eventRows.next();
+                try {
+	                this._httpClient.open('GET', 'https://www.google-analytics.com' + path, this._isAsync);
+	                this._httpClient.setRequestHeader('User-Agent', this._USER_AGENT);
+	                this._httpClient.send();
+	                
+	                eventsToDelete.push(event.event_id);
+	                
+	                eventRows.next();
+                } catch(ex) {
+                	Ti.API.info("Google Analytics error. " + ex);
+                }
             }
             
             eventRows.close();      

@@ -280,7 +280,14 @@ function WebWindow(webData, callback) {
         }
         var msg = encodeURIComponent(title + "  ") + link;
         Ti.API.info("LINEへのパラメータ=" + msg);
-        Ti.Platform.openURL("line://msg/text/" + msg);
+        var opened = Ti.Platform.openURL("line://msg/text/" + msg);
+        if (!opened) {
+            var dialog = Ti.UI.createAlertDialog({
+                message: "LINEをインストールしてください。",
+                buttonNames: ['OK']
+            });
+            dialog.show();
+        }
     }
     /**
      * twitterに投稿する。
