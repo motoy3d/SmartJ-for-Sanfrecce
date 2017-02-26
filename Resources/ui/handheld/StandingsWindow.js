@@ -342,7 +342,7 @@ function StandingsWindow(tabGroup) {
                         );
                     }
                     table = Ti.UI.createTableView(style.standings.table);
-                    table.height = 210;
+                    table.height = rows.length == 7? 210 : 240;
                     table.setData(rows);
                     containerView.add(table);
                 } catch(e) {

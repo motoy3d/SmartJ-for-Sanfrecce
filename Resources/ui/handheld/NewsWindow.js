@@ -80,32 +80,36 @@ function NewsWindow(tabGroup, teamId, teamName) {
     }
 
     // 広告
-    var ad = require('net.nend');
     var adViewContainer = Ti.UI.createView (style.news.adViewContainer);
     var adView;
-    if(Ti.Platform.osname === 'android'){        
-        // for Android
-        // Icon Layout type. 
-        if(Ti.App.adType == 1) {//アイコン
-            adView = ad.createView ({
-                spotId: config.nendSpotIdAndroid,
-                apiKey: config.nendApiKeyAndroid,
-                adType:'icon',
-                orientation:'horizontal',
-                width: 320,
-                height: 75,
-                top: 5,
-                iconCount: 4
-            });
-        } else if(Ti.App.adType == 2) {    //バナー
-            adView = ad.createView ({
-                spotId: config.nendSpotIdAndroidBanner,
-                apiKey: config.nendApiKeyAndroidBanner,
-                top: 0,
-                isAdjust: true
-            });
+    if(Ti.Platform.osname === 'android'){
+		//4系でエラーになるため広告非表示
+		if (Ti.Platform.version.indexOf("4") != 0) {        
+		    var ad = require('net.nend');
+	        // for Android
+	        // Icon Layout type. 
+	        if(Ti.App.adType == 1) {//アイコン
+	            adView = ad.createView ({
+	                spotId: config.nendSpotIdAndroid,
+	                apiKey: config.nendApiKeyAndroid,
+	                adType:'icon',
+	                orientation:'horizontal',
+	                width: 320,
+	                height: 75,
+	                top: 5,
+	                iconCount: 4
+	            });
+	        } else if(Ti.App.adType == 2) {    //バナー
+	            adView = ad.createView ({
+	                spotId: config.nendSpotIdAndroidBanner,
+	                apiKey: config.nendApiKeyAndroidBanner,
+	                top: 0,
+	                isAdjust: true
+	            });
+	        }
         }
     } else {
+	    var ad = require('net.nend');
         // for iPhone
         adView = ad.createView (style.news.adViewIPhoneBanner);
         adView.spotId = config.nendSpotIdIPhoneBanner;
@@ -387,7 +391,9 @@ function NewsWindow(tabGroup, teamId, teamName) {
                             } else if(Ti.App.adType == 2){//バナー
                                 //Ti.API.info('★バナー広告');
                                 if (util.isAndroid()) {
-                                    listView.top = 70; // 元は50
+                                	if (Ti.Platform.version.indexOf("4") != 0) {	//4系でnendがエラーになるため
+                                    	listView.top = 70; // 元は50
+                                    }
                                 } else {
                                     adView.height = 50;
                                     adViewContainer.height = 50;
