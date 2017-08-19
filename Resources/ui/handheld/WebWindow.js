@@ -147,7 +147,7 @@ function WebWindow(webData, callback) {
         self.add(webView);
     }
 	else {
-		Ti.API.debug("----------- 2  link = " + webData.link);
+		Ti.API.info("----------- 2  link = " + webData.link);
         webView.scalesPageToFit = true;
 		webView.setUrl(webData.link);
 		self.add(webView);
@@ -179,7 +179,6 @@ function WebWindow(webData, callback) {
             if(!ind && e.navigationType != 5) {//リンク先URLのhtml中の画像やiframeの場合、5
                 Ti.API.info('beforeload #################### ');
                 Ti.API.info("e = " + util.toString(e));
-                //webView.opacity = 0.8;
                 //Ti.API.info(util.formatDatetime2(new Date()) + '  インジケータshow');
 //                webView.add(ind);
 //TODO style
@@ -188,6 +187,7 @@ function WebWindow(webData, callback) {
                 });
                 webView.add(ind);
                 ind.show();
+                setTimeout(function(){ind.hide(); ind = null;}, 6000);	//ずっとインジケータが回り続けることがあるので6秒後には消す
                 // webView.url = e.url;
                 //Ti.API.info('beforeload end-------------------------------- ');
             }
@@ -201,7 +201,6 @@ function WebWindow(webData, callback) {
                 Ti.API.info('load1 ####################');
                 Ti.API.info(util.toString(e));
                 Ti.API.info(util.formatDatetime2(new Date()) + '  インジケータhide');
-                webView.opacity = 1.0;
                 ind.hide();
                 ind = null;
                 Ti.API.info('load end-------------------------------- ');
@@ -272,7 +271,7 @@ function WebWindow(webData, callback) {
      */
     function lineSend(e) {
         Ti.App.Analytics.trackPageview('/lineDialog');   //ダイアログを開く
-        var link = webView.url; 
+        var link = webData.link;
         var title = webView.evalJS("document.title");
         if(!title || link.indexOf("redspress") != -1) {
             //レッズプレスはjquery mobileを使用しており、titleタグが上書きされてしまうため
@@ -280,21 +279,14 @@ function WebWindow(webData, callback) {
         }
         var msg = encodeURIComponent(title + "  ") + link;
         Ti.API.info("LINEへのパラメータ=" + msg);
-        var opened = Ti.Platform.openURL("line://msg/text/" + msg);
-        if (!opened) {
-            var dialog = Ti.UI.createAlertDialog({
-                message: "LINEをインストールしてください。",
-                buttonNames: ['OK']
-            });
-            dialog.show();
-        }
+        Ti.Platform.openURL("line://msg/text/" + msg);
     }
     /**
      * twitterに投稿する。
      */
     function tweet(e) {
         Ti.App.Analytics.trackPageview('/tweetDialog');   //ダイアログを開く
-        var link = webView.url; 
+        var link = webData.link;
         var title = webView.evalJS("document.title");
         if(!title || link.indexOf("redspress") != -1) {
             //レッズプレスはjquery mobileを使用しており、titleタグが上書きされてしまうため
@@ -318,7 +310,7 @@ function WebWindow(webData, callback) {
      */ 
     function facebookShareBySocialModule() {
         Ti.App.Analytics.trackPageview('/fbShareDialog');   //ダイアログを開く
-        var link = webView.url; 
+        var link = webData.link;
         Ti.API.info('facebook share >>>>>>>> ' + link);
 
         social.showSheet({
@@ -334,28 +326,6 @@ function WebWindow(webData, callback) {
             }
         });
     }
-    /**
-     * facebookでシェアする
-     */	
-	function facebookShareByWebView() {
-        var link = webView.url; 
-        Ti.API.info('facebookシェア link=' + link);
-        var data = {
-            link : link
-            ,locale : "ja_JP"
-        };
-        Ti.App.Analytics.trackPageview('/fbShareDialog');   //ダイアログを開く
-        //投稿ダイアログを表示
-        Ti.Facebook.dialog(
-            "feed", 
-            data, 
-            function(r){
-                if(r.success) {
-                    Ti.App.Analytics.trackPageview('/fbShare'); //投稿成功
-                }
-            }
-        );
-	}
 	return self;
 };
 

@@ -78,69 +78,6 @@ function NewsWindow(tabGroup, teamId, teamName) {
     	self.navTintColor = "black";
         self.titleAttributes = {color: "black"};
     }
-
-    // 広告
-    var adViewContainer = Ti.UI.createView (style.news.adViewContainer);
-    var adView;
-    if(Ti.Platform.osname === 'android'){
-		//4系でエラーになるため広告非表示
-		if (Ti.Platform.version.indexOf("4") != 0) {        
-		    var ad = require('net.nend');
-	        // for Android
-	        // Icon Layout type. 
-	        if(Ti.App.adType == 1) {//アイコン
-	            adView = ad.createView ({
-	                spotId: config.nendSpotIdAndroid,
-	                apiKey: config.nendApiKeyAndroid,
-	                adType:'icon',
-	                orientation:'horizontal',
-	                width: 320,
-	                height: 75,
-	                top: 5,
-	                iconCount: 4
-	            });
-	        } else if(Ti.App.adType == 2) {    //バナー
-	            adView = ad.createView ({
-	                spotId: config.nendSpotIdAndroidBanner,
-	                apiKey: config.nendApiKeyAndroidBanner,
-	                top: 0,
-	                isAdjust: true
-	            });
-	        }
-        }
-    } else {
-	    var ad = require('net.nend');
-        // for iPhone
-        adView = ad.createView (style.news.adViewIPhoneBanner);
-        adView.spotId = config.nendSpotIdIPhoneBanner;
-        adView.apiKey = config.nendApiKeyIPhoneBanner;
-    }
-    if (adView) {
-        // 2. Add Event Listener.
-        // 受信成功通知
-        adView.addEventListener('receive',function(e){
-            //Ti.API.info('icon receive');
-        });
-        // 受信エラー通知
-        adView.addEventListener('error',function(e){
-            Ti.API.info('広告受信エラー:' + util.toString(e));
-            adViewContainer.setHeight(0);
-            adView.setHeight(0);
-            listView.setTop(0);
-        });
-        // クリック通知
-        adView.addEventListener('click',function(e){
-            Ti.API.info('広告クリック');
-        }); 
-        
-        // 3. Add View
-        if (util.isAndroid()) {
-            self.add(adView);
-        } else {
-            adViewContainer.add(adView);
-            self.add(adViewContainer);
-        }
-    }
     
     // インジケータ
     var indicator = Ti.UI.createActivityIndicator({
@@ -383,23 +320,6 @@ function NewsWindow(tabGroup, teamId, teamName) {
                         //Ti.API.info("rowsData■" + rowsData);
                         // 初回ロード時
                         if("firstTime" == kind) {
-                            if(Ti.App.adType == 1) {//アイコン
-                                //Ti.API.info('★アイコン広告');
-                                adViewContainer.height = 80;
-                                adView.height = 75;
-                                listView.top = 80;
-                            } else if(Ti.App.adType == 2){//バナー
-                                //Ti.API.info('★バナー広告');
-                                if (util.isAndroid()) {
-                                	if (Ti.Platform.version.indexOf("4") != 0) {	//4系でnendがエラーになるため
-                                    	listView.top = 70; // 元は50
-                                    }
-                                } else {
-                                    adView.height = 50;
-                                    adViewContainer.height = 50;
-                                    listView.top = 50;
-                                }
-                            }
                             if(rowsData) {
                                 if(util.isAndroid()) {   // リロードボタンの行を１番目に挿入
                                      rowsData.unshift(

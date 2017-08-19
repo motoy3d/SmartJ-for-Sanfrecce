@@ -545,13 +545,13 @@ function StandingsWindow(tabGroup) {
             }
         });
         var toolbar = Ti.UI.createView({
-            backgroundColor: style.common.navTintColor
+            backgroundColor: "white"
             ,width: Ti.UI.FILL
             ,height: 46
             ,bottom: 0
         });
         var btnHolder = Ti.UI.createView({
-            backgroundColor: style.common.navTintColor
+            backgroundColor: "white"
             ,width: "J1" == Ti.App.jcategory ? 320 : 100
             ,height: 46
             ,bottom: 0

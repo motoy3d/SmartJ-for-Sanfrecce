@@ -33,9 +33,14 @@ function ConfigWindow(webData) {
     // 開発元にメールする    
     var mailToDeveloperRow = Ti.UI.createTableViewRow(style.config.mailToDeveloperRow);
     table.appendRow(mailToDeveloperRow);
-    // 利用規約    
+    // 利用規約
     var ruleRow = Ti.UI.createTableViewRow(style.config.ruleRow);
     table.appendRow(ruleRow);
+    // キャッシュをクリアする(Androidは標準でクリア機能がある)
+    if(util.isiOS()) {
+	    var clearCacheRow = Ti.UI.createTableViewRow(style.config.clearCacheRow);
+	    table.appendRow(clearCacheRow);
+	}
     
     table.addEventListener("click", function(e){
         if(e.index == 0) { //友達にLINEですすめる
@@ -135,6 +140,24 @@ function ConfigWindow(webData) {
 			});
 			ruleWin.add(webView);
 			Ti.App.tabGroup.activeTab.open(ruleWin, {animated: true});
+        }
+        else if(e.index == 7) { //キャッシュをクリア
+			var webViewCacheDir = Ti.Filesystem.getFile(Ti.Filesystem.applicationCacheDirectory);
+			Ti.API.info("cacheDiroctory=" + Ti.Filesystem.applicationCacheDirectory);
+			var cacheFiles = webViewCacheDir.getDirectoryListing();
+			Ti.API.info('Array length before: ' + webViewCacheDir.getDirectoryListing().length);
+			for (var idx in cacheFiles) {
+				Ti.API.info('file=' + cacheFiles[idx]);
+				var file = Ti.Filesystem.getFile(Ti.Filesystem.applicationCacheDirectory, cacheFiles[idx]);
+				if(file.isFile()) {
+					file.deleteFile();
+				}
+			}
+            var dialog = Ti.UI.createAlertDialog({
+                message: "キャッシュをクリアしました。",
+                buttonNames: ['OK']
+            });
+            dialog.show();
         }
     });
 	return self;

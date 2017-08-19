@@ -92,6 +92,7 @@
                 Ti.App.currentStage = json[0].currentStage;    //J1現在ステージ
                 Ti.App.aclFlg = json[0].aclFlg;    //ALC出場フラグ(true/false)
                 Ti.App.adType = json[0].adType;    //広告タイプ(1:アイコン、2:バナー)
+                Ti.App.isOtherTeamNewsFeatureEnable = json[0].isOtherTeamNewsFeatureEnable;	//他チーム情報参照機能有効
                 if(json[0].message){
                     message = json[0].message;
                 }
